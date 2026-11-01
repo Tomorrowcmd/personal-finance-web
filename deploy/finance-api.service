@@ -1,0 +1,49 @@
+# ============================================================
+# 财务管家 · 后端 Spring Boot 服务（systemd）
+#
+# 安装：
+#   sudo cp deploy/finance-api.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now finance-api
+#   sudo systemctl status finance-api
+#
+# 日志：journalctl -u finance-api -f
+# ============================================================
+[Unit]
+Description=Personal Finance API (Spring Boot)
+Documentation=https://github.com/your-name/personal-finance
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+# 建议单独建一个低权限用户：sudo useradd -r -s /sbin/nologin finance
+User=finance
+Group=finance
+WorkingDirectory=/opt/finance
+
+# 只监听本机，公网访问统一走 Nginx 反代（安全组不要开放 9081）
+Environment="SERVER_PORT=9081"
+Environment="SERVER_ADDRESS=127.0.0.1"
+Environment="SPRING_PROFILES_ACTIVE=prod"
+Environment="TZ=Asia/Shanghai"
+
+ExecStart=/usr/bin/java -Xms256m -Xmx512m -jar /opt/finance/app.jar
+SuccessExitStatus=143
+
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+
+# 安全加固：限制可写目录
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/finance/logs
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=finance-api
+
+[Install]
+WantedBy=multi-user.target
