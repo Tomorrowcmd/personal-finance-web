@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import UserMenu from '@/components/layout/UserMenu.vue'
@@ -8,45 +8,60 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import { useUiStore } from '@/stores/ui'
 
 /**
- * 顶栏：页面标题 + 用户菜单（修改密码 / 退出）+ 主题切换 + 快捷记账
+ * 顶栏（Element Plus 版）
  *
- * 标题与副标题来自路由 meta，新增页面时只改 router 配置即可。
- * 顶栏整体 sticky + 半透明背景，滚动时内容从下面穿过。
+ * 左侧页面标题（来自路由 meta），右侧：用户下拉菜单、主题切换、快捷记账。
+ * 页面滚动后收起透明背景并加一层柔和阴影，让内容与导航的层次更清楚。
  */
 const route = useRoute()
 const ui = useUiStore()
 
-/** 页面标题，未配置 meta 时回退到应用名 */
+/** 页面标题 */
 const title = computed(() => (route.meta.title as string | undefined) ?? '个人财务管家')
-/** 页面副标题（可选），窄屏隐藏 */
+/** 页面副标题 */
 const subtitle = computed(() => (route.meta.subtitle as string | undefined) ?? '')
+/** 主题按钮的提示文案 */
+const themeTip = computed(() => (ui.theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'))
+
+/** 是否已经向下滚动（用于切换顶栏的描边与阴影） */
+const scrolled = ref(false)
+
+/** 滚动监听：被动监听，避免阻塞滚动 */
+function onScroll(): void {
+  scrolled.value = window.scrollY > 6
+}
+
+onMounted(() => {
+  onScroll()
+  window.addEventListener('scroll', onScroll, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', onScroll)
+})
 </script>
 
 <template>
-  <header class="topbar">
-    <!-- 左侧：页面标题与副标题（来自路由 meta，随页面切换） -->
+  <header class="topbar" :class="{ 'is-scrolled': scrolled }">
     <div class="topbar__heading">
       <h1 class="topbar__title">{{ title }}</h1>
       <p v-if="subtitle" class="topbar__subtitle">{{ subtitle }}</p>
     </div>
 
-    <!-- 右侧：用户菜单 / 主题切换 / 快捷记账 -->
     <div class="topbar__actions">
-      <!-- 用户菜单：修改密码 / 退出登录 -->
+      <!-- 用户下拉菜单：修改密码 / 退出登录 -->
       <UserMenu />
 
-      <button
-        class="icon-btn"
-        type="button"
-        :aria-label="ui.theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'"
-        :title="ui.theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'"
-        @click="ui.toggleTheme()"
-      >
-        <AppIcon :name="ui.theme === 'dark' ? 'sun' : 'moon'" :size="17" />
-      </button>
+      <!-- 主题切换 -->
+      <el-tooltip :content="themeTip" placement="bottom" :show-after="300">
+        <el-button text circle class="icon-btn" :aria-label="themeTip" @click="ui.toggleTheme()">
+          <AppIcon :name="ui.theme === 'dark' ? 'sun' : 'moon'" :size="17" />
+        </el-button>
+      </el-tooltip>
 
+      <!-- 快捷记账 -->
       <BaseButton variant="primary" @click="ui.openQuickAdd()">
-        <AppIcon name="plus" :size="15" :stroke-width="2.2" />
+        <AppIcon name="plus" :size="15" />
         <span class="topbar__add-label">记一笔</span>
       </BaseButton>
     </div>
@@ -62,11 +77,22 @@ const subtitle = computed(() => (route.meta.subtitle as string | undefined) ?? '
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  height: 68px;
+  height: 64px;
   padding: 0 28px;
-  background: color-mix(in srgb, var(--bg) 86%, transparent);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  backdrop-filter: blur(12px) saturate(1.4);
+  border-bottom: 1px solid transparent;
+  transition:
+    background-color 0.22s var(--ease),
+    border-color 0.22s var(--ease),
+    box-shadow 0.22s var(--ease);
+}
+
+/* 滚动后：底色变实、描边出现、加一层柔和投影 */
+.topbar.is-scrolled {
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--line) 78%, transparent);
+  box-shadow: 0 12px 28px -26px rgba(16, 24, 40, 0.55);
 }
 
 .topbar__heading {
@@ -93,28 +119,19 @@ const subtitle = computed(() => (route.meta.subtitle as string | undefined) ?? '
 }
 
 .icon-btn {
-  display: grid;
-  place-items: center;
   width: 34px;
   height: 34px;
-  border-radius: var(--radius-md);
   color: var(--ink-2);
-  border: 1px solid transparent;
-  transition:
-    background-color 0.16s var(--ease),
-    color 0.16s var(--ease),
-    border-color 0.16s var(--ease);
 }
 
 .icon-btn:hover {
   background: var(--surface);
-  border-color: var(--line);
   color: var(--ink);
 }
 
 @media (max-width: 640px) {
   .topbar {
-    height: 60px;
+    height: 58px;
     padding: 0 16px;
   }
 

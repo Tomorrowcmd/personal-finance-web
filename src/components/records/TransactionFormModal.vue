@@ -11,7 +11,6 @@ import { useSyncStore } from '@/stores/sync'
 import { useToastStore } from '@/stores/toast'
 
 import BaseButton from '@/components/ui/BaseButton.vue'
-import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseTextarea from '@/components/ui/BaseTextarea.vue'
 import CategoryDot from '@/components/ui/CategoryDot.vue'
@@ -104,6 +103,11 @@ watch(type, () => {
 function onAmountBlur(): void {
   const parsed = Number(amount.value)
   if (Number.isFinite(parsed) && parsed > 0) amount.value = parsed.toFixed(2)
+}
+
+/** 日期选择器禁止选择未来日期（与原来的 max 限制等价） */
+function disabledFuture(date: Date): boolean {
+  return date.getTime() > Date.now()
 }
 
 /**
@@ -232,7 +236,19 @@ async function submit(): Promise<void> {
 
       <!-- 日期与备注 -->
       <div class="form__grid">
-        <BaseInput v-model="date" label="日期" type="date" :max="todayISO()" :error="errors.date" />
+        <div class="form__date">
+          <p class="form__label">日期</p>
+          <el-date-picker
+            v-model="date"
+            type="date"
+            placeholder="选择日期"
+            value-format="YYYY-MM-DD"
+            :clearable="false"
+            :disabled-date="disabledFuture"
+            class="form__date-picker"
+          />
+          <p v-if="errors.date" class="form__error">{{ errors.date }}</p>
+        </div>
         <BaseTextarea
           v-model="note"
           label="备注"
@@ -363,6 +379,30 @@ async function submit(): Promise<void> {
   font-size: 12.5px;
   font-weight: 600;
   color: var(--ink-2);
+}
+
+/* 日期选择器：与 BaseInput 保持同样的高度与描边 */
+.form__date {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.form__date-picker {
+  width: 100%;
+}
+
+.form__date-picker :deep(.el-input__wrapper) {
+  min-height: 38px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 0 1px var(--line-strong) inset;
+}
+
+.form__date-picker :deep(.el-input__wrapper.is-focus) {
+  box-shadow:
+    0 0 0 1px var(--brand) inset,
+    0 0 0 3px var(--brand-ring);
 }
 
 .chips {

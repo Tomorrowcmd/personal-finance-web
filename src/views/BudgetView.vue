@@ -307,9 +307,9 @@ function percentOf(categoryId: number): number {
           <p class="total-field__label">本月预算总额</p>
           <div class="total-field__control">
             <span class="total-field__symbol">¥</span>
-            <input
+            <el-input
               v-model="draftTotal"
-              class="total-field__input num"
+              class="total-field__input"
               inputmode="decimal"
               placeholder="0"
               aria-label="本月预算总额"
@@ -500,19 +500,36 @@ function percentOf(categoryId: number): number {
 
 .total-field__input {
   width: 190px;
-  border: none;
-  outline: none;
-  background: transparent;
-  font-size: 32px;
-  font-weight: 650;
-  letter-spacing: -0.03em;
+}
+
+/* 预算总额：大号数字输入，去掉 EP 默认边框，只保留底部下划线 */
+.total-field__input :deep(.el-input__wrapper) {
+  height: 46px;
   padding: 0;
+  background: transparent;
+  box-shadow: none;
   border-bottom: 2px solid var(--line);
+  border-radius: 0;
   transition: border-color 0.16s var(--ease);
 }
 
-.total-field__input:focus {
-  border-color: var(--brand);
+.total-field__input :deep(.el-input__wrapper:hover) {
+  box-shadow: none;
+  border-bottom-color: var(--ink-3);
+}
+
+.total-field__input :deep(.el-input__wrapper.is-focus) {
+  box-shadow: none;
+  border-bottom-color: var(--brand);
+}
+
+.total-field__input :deep(.el-input__inner) {
+  height: 44px;
+  font-family: var(--font-num);
+  font-size: 30px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  color: var(--ink);
 }
 
 .head-card__stats {

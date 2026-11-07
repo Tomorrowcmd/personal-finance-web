@@ -2,26 +2,23 @@
 import AppIcon from '@/components/ui/AppIcon.vue'
 
 /**
- * 指标卡
+ * 指标卡（Element Plus 版）
  *
- * 统计页顶部的四个数字卡片（总收入 / 总支出 / 净结余 / 储蓄率）。
- * - tone 决定左上角图标底色（品牌色 / 收入绿 / 支出红 / 预警橙）
- * - badge 是右上角的可选小标签，用于「较上月 +6%」这类提示
- * - value 由调用方格式化好再传入，组件不关心金额规则
+ * 用 el-card 承载，保留原有 props（label / value / hint / icon / tone / badge）。
  */
 withDefaults(
   defineProps<{
-    /** 指标名称，如「总收入」 */
+    /** 指标名称 */
     label: string
-    /** 已格式化的指标值，如「¥12,345.67」 */
+    /** 已格式化的指标值 */
     value: string
-    /** 值下方的补充说明，如「月均 ¥6,505.03」 */
+    /** 补充说明 */
     hint?: string
-    /** 图标名（对应 AppIcon 的 ICONS key） */
+    /** 图标名（AppIcon 语义名） */
     icon?: string
-    /** 图标配色主题 */
+    /** 图标配色 */
     tone?: 'brand' | 'income' | 'expense' | 'warning'
-    /** 右上角小标签：text + 语义色 */
+    /** 右上角小标签 */
     badge?: { text: string; tone: 'good' | 'bad' | 'neutral' }
   }>(),
   { hint: '', icon: 'wallet', tone: 'brand' },
@@ -29,7 +26,7 @@ withDefaults(
 </script>
 
 <template>
-  <div class="stat card">
+  <el-card shadow="never" class="stat">
     <div class="stat__head">
       <span class="stat__icon" :class="`stat__icon--${tone}`">
         <AppIcon :name="icon" :size="15" />
@@ -42,12 +39,28 @@ withDefaults(
 
     <p class="stat__value num">{{ value }}</p>
     <p v-if="hint" class="stat__hint">{{ hint }}</p>
-  </div>
+  </el-card>
 </template>
 
 <style scoped>
 .stat {
-  padding: 16px 18px 15px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  transition:
+    border-color 0.2s var(--ease),
+    box-shadow 0.2s var(--ease),
+    transform 0.2s var(--ease);
+}
+
+.stat:hover {
+  border-color: color-mix(in srgb, var(--brand) 22%, var(--line));
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.stat :deep(.el-card__body) {
+  padding: 17px 20px 16px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -64,29 +77,50 @@ withDefaults(
 .stat__icon {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
   flex: none;
+  border: 1px solid transparent;
 }
 
 .stat__icon--brand {
-  background: var(--brand-soft);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--brand) 18%, transparent),
+    transparent
+  );
+  border-color: color-mix(in srgb, var(--brand) 16%, transparent);
   color: var(--brand);
 }
 
 .stat__icon--income {
-  background: var(--income-soft);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--income) 18%, transparent),
+    transparent
+  );
+  border-color: color-mix(in srgb, var(--income) 16%, transparent);
   color: var(--income);
 }
 
 .stat__icon--expense {
-  background: var(--expense-soft);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--expense) 18%, transparent),
+    transparent
+  );
+  border-color: color-mix(in srgb, var(--expense) 16%, transparent);
   color: var(--expense);
 }
 
 .stat__icon--warning {
-  background: var(--warning-soft);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--warning) 20%, transparent),
+    transparent
+  );
+  border-color: color-mix(in srgb, var(--warning) 16%, transparent);
   color: var(--warning);
 }
 
@@ -94,6 +128,7 @@ withDefaults(
   font-size: 12.5px;
   color: var(--ink-2);
   font-weight: 550;
+  letter-spacing: 0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -124,11 +159,12 @@ withDefaults(
 }
 
 .stat__value {
-  font-size: 23px;
-  font-weight: 660;
-  letter-spacing: -0.03em;
-  margin-top: 8px;
-  line-height: 1.2;
+  font-size: 24px;
+  font-weight: 670;
+  letter-spacing: -0.035em;
+  margin-top: 9px;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
 }
 
 .stat__hint {

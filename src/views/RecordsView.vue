@@ -310,9 +310,25 @@ async function exportExcel(): Promise<void> {
         />
 
         <div v-if="preset === 'custom'" class="custom-range">
-          <input v-model="custom.startDate" type="date" class="date-input" aria-label="开始日期" />
+          <el-date-picker
+            v-model="custom.startDate"
+            type="date"
+            size="small"
+            value-format="YYYY-MM-DD"
+            placeholder="开始日期"
+            :clearable="false"
+            aria-label="开始日期"
+          />
           <span class="custom-range__sep">至</span>
-          <input v-model="custom.endDate" type="date" class="date-input" aria-label="结束日期" />
+          <el-date-picker
+            v-model="custom.endDate"
+            type="date"
+            size="small"
+            value-format="YYYY-MM-DD"
+            placeholder="结束日期"
+            :clearable="false"
+            aria-label="结束日期"
+          />
         </div>
       </div>
     </section>
@@ -457,19 +473,8 @@ async function exportExcel(): Promise<void> {
   gap: 6px;
 }
 
-.date-input {
-  height: 32px;
-  padding: 0 10px;
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  font-size: 12.5px;
-  outline: none;
-}
-
-.date-input:focus {
-  border-color: var(--brand);
-  box-shadow: 0 0 0 3px var(--brand-ring);
+.custom-range :deep(.el-date-editor) {
+  width: 140px;
 }
 
 .custom-range__sep {

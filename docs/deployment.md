@@ -91,7 +91,7 @@ npm ci            # 严格按 lockfile 安装
 npm run build     # vue-tsc 类型检查 + vite build
 ```
 
-产物在 `dist/`，约 **830 KB**（gzip 后约 290 KB，33 个文件）：
+产物在 `dist/`，约 **1.6 MB**（gzip 后约 480 KB，40 个文件；其中 ECharts 与 Element Plus 占了大部分）：
 
 ```
 dist/

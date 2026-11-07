@@ -1,77 +1,55 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 
-/** 确认框参数 */
+/** 确认框参数（与原有 API 一致） */
 export interface ConfirmOptions {
-  /** 标题，默认「确认操作」 */
+  /** 标题 */
   title?: string
-  /** 正文（支持 \n 换行） */
+  /** 正文，支持 \n 换行 */
   message: string
-  /** 确认按钮文案，默认「确定」 */
+  /** 确认按钮文案 */
   confirmText?: string
-  /** 取消按钮文案，默认「取消」 */
+  /** 取消按钮文案 */
   cancelText?: string
-  /** danger 会使用红色确认按钮（删除、退出等） */
+  /** danger 使用红色确认按钮 */
   tone?: 'brand' | 'danger'
 }
 
-/** 内部状态：选项全部有默认值，外加 open 标记 */
-interface ConfirmState extends Required<ConfirmOptions> {
-  open: boolean
-}
-
 /**
- * 确认框
+ * 确认框（Element Plus 版）
  *
- * 把「弹窗状态 + Promise」封装成一行调用，页面不用自己维护 show 变量：
- *
- * ```ts
- * const ok = await confirm.ask({ message: '确定删除？', tone: 'danger' })
- * if (!ok) return
- * ```
- *
- * 同一时刻只支持一个确认框（后开的会覆盖前一个的 Promise），
- * 对当前交互足够；如果将来需要队列，可改成数组。
+ * 对外仍是 `const ok = await confirm.ask({...})`，内部换成 ElMessageBox.confirm：
+ * - 取消 / 关闭 / ESC 都会 reject，这里统一转成 false
+ * - 确认返回 true
  */
 export const useConfirmStore = defineStore('confirm', () => {
-  /** 当前弹窗内容与显隐 */
-  const state = ref<ConfirmState>({
-    open: false,
-    title: '确认操作',
-    message: '',
-    confirmText: '确定',
-    cancelText: '取消',
-    tone: 'brand',
-  })
-
-  /** 保存 Promise 的 resolve，等用户操作后回调 */
-  let resolver: ((value: boolean) => void) | null = null
-
   /**
-   * 打开确认框并等待用户选择
+   * 打开确认框
    *
-   * @returns 确认返回 true，取消/关闭返回 false
+   * @returns 确认返回 true，取消返回 false
    */
-  function ask(options: ConfirmOptions): Promise<boolean> {
-    state.value = {
-      open: true,
-      title: options.title ?? '确认操作',
-      message: options.message,
-      confirmText: options.confirmText ?? '确定',
-      cancelText: options.cancelText ?? '取消',
-      tone: options.tone ?? 'brand',
+  async function ask(options: ConfirmOptions): Promise<boolean> {
+    try {
+      await ElMessageBox.confirm(options.message, options.title ?? '确认操作', {
+        confirmButtonText: options.confirmText ?? '确定',
+        cancelButtonText: options.cancelText ?? '取消',
+        type: options.tone === 'danger' ? 'warning' : 'info',
+        // 危险操作给确认按钮加自定义 class（样式见 main.css）
+        confirmButtonClass: options.tone === 'danger' ? 'app-confirm-danger' : undefined,
+        closeOnClickModal: false,
+        closeOnPressEscape: true,
+        draggable: true,
+      })
+      return true
+    } catch {
+      return false
     }
-    return new Promise<boolean>((resolve) => {
-      resolver = resolve
-    })
   }
 
-  /** 结束确认（确认按钮传 true，取消/Esc/关闭传 false） */
-  function settle(value: boolean): void {
-    state.value.open = false
-    resolver?.(value)
-    resolver = null
+  /** 兼容旧 API（原 ConfirmHost 使用），现在无需手动结束 */
+  function settle(): void {
+    // no-op
   }
 
-  return { state, ask, settle }
+  return { ask, settle }
 })

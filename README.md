@@ -4,8 +4,8 @@
 纯前端 + 浏览器本地演示数据即可完整运行；后端接口按 REST 契约预留，接上 Spring Boot 后关闭模拟开关即可。
 
 - 技术栈：Vue 3.5 + TypeScript + Vite 8 + Pinia + Vue Router + ECharts 6 + Axios
+- UI：Element Plus 2（按需注册）+ 自定义主题令牌，支持浅色 / 深色主题
 - 后端：Java 21 + Spring Boot 4 + PostgreSQL（接口约定见 [docs/backend-api.md](docs/backend-api.md)）
-- 无 UI 组件库，样式由设计令牌自建，支持浅色 / 深色主题
 
 ## 功能
 
@@ -107,24 +107,29 @@ src/
 │  └─ index.ts           # installMockApi()
 ├─ stores/               # Pinia：auth / ui(主题/弹窗) / category / toast / confirm / sync
 ├─ components/
-│  ├─ ui/                # 通用组件：按钮、输入、下拉、弹窗、分页、进度条…
+│  ├─ ui/                # Element Plus 薄封装：按钮、输入、下拉、弹窗、分页、进度条…
 │  ├─ charts/BaseChart   # ECharts 容器（按需注册、自适应）
-│  ├─ layout/            # 侧边栏、顶栏（含用户信息与退出）
-│  ├─ records/           # 记账表单、流水表格
+│  ├─ layout/            # 侧边栏（el-menu）、顶栏与用户菜单（el-dropdown）
+│  ├─ records/           # 记账表单、流水表格（el-table）
 │  └─ categories/        # 分类表单
 ├─ views/                # 6 个页面：登录 / 总览 / 明细 / 统计 / 预算 / 分类
 ├─ utils/                # 金额、日期、图表配置、下载、会话存储
 ├─ types/                # 与后端一一对应的领域类型
-└─ assets/styles/        # 设计令牌 + 基础样式
+└─ assets/styles/        # 设计令牌 + Element Plus 主题桥接
 ```
 
 ## 设计说明
 
-- **设计令牌**：颜色、圆角、阴影、字体集中在 `src/assets/styles/main.css`，深色主题只是覆盖一组变量，组件零改动。
+- **UI 组件库**：Element Plus 2，按需注册（`src/main.ts` 里列出的 20 多个组件），而不是全量 `app.use(ElementPlus)`，产物体积约减半。
+- **主题桥接**：Element Plus 的颜色/圆角/阴影全部通过 `--el-*` 变量控制，`main.css` 顶部把这些变量映射到项目自己的设计令牌（`--brand`、`--surface`…），因此换肤、深色模式都只有一处配置。
+- **深色模式**：继续由 `<html data-theme="dark">` 驱动（不是 EP 的 `html.dark`），`[data-theme='dark']` 里同时覆盖项目令牌与 `--el-*` 变量，组件库和自定义样式同步切换。
+- **自定义组件**：`BaseButton` / `BaseInput` / `BaseSelect` / `BaseModal` 等是对 EP 的薄封装，对外 API 不变，页面业务代码无需感知组件库。
+- **分类图标**：餐饮、交通等图标是后端返回的 emoji，由 `CategoryDot` 直接渲染，不经过图标库；系统图标（菜单、操作、主题）使用 `@element-plus/icons-vue`。
 - **图表**：ECharts 按需注册（Bar/Line/Pie + Grid/Tooltip），主题色在 `utils/chartTheme.ts` 与 CSS 令牌保持一致；配置集中在 `utils/chartOptions.ts`。
 - **数据刷新**：新增/修改/删除后调用 `useSyncStore().bump()`，各页面 `watch` 版本号重新拉取，避免层层传事件。
 - **金额精度**：接口以「元」传输，前端累加时统一转「分」做整数运算，避免 `0.1 + 0.2` 误差。
 - **响应式**：≥960px 左侧栏，小于则变为底部标签栏；表格在手机上隐藏备注列并收紧内边距，保证一屏可读。
+- **侧边栏折叠**：桌面端侧栏右下缘的圆形按钮（骑在边框上）可一键收起为图标栏（78px），状态存 `localStorage`（`pf.sidebar`），刷新后保持；收起时导航与按钮都有 tooltip。
 
 ### 鉴权实现
 

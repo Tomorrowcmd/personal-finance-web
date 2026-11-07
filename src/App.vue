@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
 import TransactionFormModal from '@/components/records/TransactionFormModal.vue'
-import ConfirmHost from '@/components/ui/ConfirmHost.vue'
-import ToastHost from '@/components/ui/ToastHost.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useCategoryStore } from '@/stores/category'
 import { useUiStore } from '@/stores/ui'
@@ -53,43 +52,55 @@ watch(
 </script>
 
 <template>
-  <!-- 登录页：整页布局，不套外壳 -->
-  <div v-if="isBlankLayout" class="app-blank">
-    <RouterView v-slot="{ Component }">
-      <Transition name="fade" mode="out-in">
-        <component :is="Component" />
-      </Transition>
-    </RouterView>
-  </div>
-
-  <div v-else class="app">
-    <AppSidebar />
-
-    <div class="app__main">
-      <AppTopbar />
-
-      <main class="app__content">
-        <RouterView v-slot="{ Component, route: current }">
-          <Transition name="page" mode="out-in">
-            <component :is="Component" :key="current.path" />
-          </Transition>
-        </RouterView>
-      </main>
+  <!-- 中文语言包：分页、日期选择器、确认框等内置文案 -->
+  <el-config-provider :locale="zhCn">
+    <!-- 登录页：整页布局，不套外壳 -->
+    <div v-if="isBlankLayout" class="app-blank">
+      <RouterView v-slot="{ Component }">
+        <Transition name="fade" mode="out-in">
+          <component :is="Component" />
+        </Transition>
+      </RouterView>
     </div>
 
-    <!-- 全局弹窗与提示 -->
-    <TransactionFormModal v-model="ui.quickAddOpen" />
-  </div>
+    <div v-else class="app">
+      <AppSidebar />
 
-  <ToastHost />
-  <ConfirmHost />
+      <div class="app__main">
+        <AppTopbar />
+
+        <main class="app__content">
+          <RouterView v-slot="{ Component, route: current }">
+            <Transition name="page" mode="out-in">
+              <component :is="Component" :key="current.path" />
+            </Transition>
+          </RouterView>
+        </main>
+      </div>
+
+      <!-- 全局弹窗（提示与确认已改由 ElMessage / ElMessageBox 承担） -->
+      <TransactionFormModal v-model="ui.quickAddOpen" />
+    </div>
+  </el-config-provider>
 </template>
 
 <style scoped>
 .app {
   display: flex;
   min-height: 100vh;
-  background: var(--bg);
+  background:
+    radial-gradient(
+      1100px 520px at 84% -14%,
+      color-mix(in srgb, var(--brand) 8%, transparent) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      820px 420px at -8% 18%,
+      color-mix(in srgb, var(--brand) 4%, transparent) 0%,
+      transparent 60%
+    ),
+    var(--bg);
+  background-attachment: fixed;
 }
 
 .app-blank {
@@ -106,9 +117,9 @@ watch(
 
 .app__content {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 24px 28px 56px;
+  padding: 26px 30px 64px;
   flex: 1;
 }
 

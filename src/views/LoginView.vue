@@ -227,10 +227,14 @@ async function submit(): Promise<void> {
           </label>
 
           <Transition name="fade">
-            <p v-if="error" class="login-error" role="alert">
-              <AppIcon name="alert" :size="14" />
-              <span>{{ error }}</span>
-            </p>
+            <el-alert
+              v-if="error"
+              :title="error"
+              type="error"
+              show-icon
+              :closable="false"
+              class="login-error"
+            />
           </Transition>
 
           <BaseButton type="submit" variant="primary" size="lg" block :loading="submitting">
@@ -243,7 +247,7 @@ async function submit(): Promise<void> {
             <p class="demo-card__title">演示模式</p>
             <p class="demo-card__text">账号 <b>admin</b> · 密码 <b>admin123</b></p>
           </div>
-          <button class="demo-card__btn" type="button" @click="fillDemo">一键填入</button>
+          <el-button size="small" type="primary" plain @click="fillDemo">一键填入</el-button>
         </div>
 
         <p class="login-foot">登录状态保存在本机浏览器 · 未登录无法访问任何数据</p>

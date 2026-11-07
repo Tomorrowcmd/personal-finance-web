@@ -202,6 +202,7 @@ async function load(): Promise<void> {
 }
 
 // 切换月份或任意一笔数据变更（sync.version 自增）时整体重载
+// immediate: true： 页面一打开就先调用一次load, 把当前月份数据拉出来
 watch([month, () => sync.version], load, { immediate: true })
 
 /** 跳转到预算页（从预算卡片右上角「调整」进入） */
@@ -422,14 +423,44 @@ function goBudget(): void {
   display: flex;
   justify-content: space-between;
   gap: 20px;
-  padding: 24px 26px;
+  padding: 26px 28px;
   border-radius: var(--radius-xl);
   overflow: hidden;
   color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   background:
-    radial-gradient(120% 140% at 100% 0%, rgba(242, 193, 78, 0.24) 0%, transparent 55%),
+    radial-gradient(120% 140% at 100% 0%, rgba(242, 193, 78, 0.26) 0%, transparent 55%),
+    radial-gradient(90% 120% at 0% 100%, rgba(0, 0, 0, 0.22) 0%, transparent 60%),
     linear-gradient(135deg, #0f7a63 0%, #0a5a49 55%, #094438 100%);
-  box-shadow: 0 18px 40px -26px rgba(9, 68, 56, 0.75);
+  box-shadow:
+    0 22px 44px -30px rgba(9, 68, 56, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* 右上角的柔光 */
+.hero::after {
+  content: '';
+  position: absolute;
+  right: -80px;
+  top: -110px;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.18), transparent 66%);
+  pointer-events: none;
+}
+
+/* 细点阵纹理，增加质感（右下角淡出） */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px);
+  background-size: 18px 18px;
+  opacity: 0.22;
+  -webkit-mask-image: linear-gradient(120deg, transparent 35%, #000 100%);
+  mask-image: linear-gradient(120deg, transparent 35%, #000 100%);
+  pointer-events: none;
 }
 
 /* 深色主题下整体压暗，避免刺眼 */
@@ -458,11 +489,12 @@ function goBudget(): void {
 }
 
 .hero__value {
-  margin-top: 2px;
-  font-size: 38px;
-  font-weight: 640;
-  letter-spacing: -0.035em;
-  line-height: 1.15;
+  margin-top: 4px;
+  font-size: 40px;
+  font-weight: 660;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 }
 
 .hero__meta {

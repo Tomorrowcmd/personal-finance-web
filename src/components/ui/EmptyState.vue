@@ -1,19 +1,14 @@
 <script setup lang="ts">
 /**
- * 空状态占位
+ * 空状态（Element Plus 封装）
  *
- * 图表无数据、列表为空、未设置预算时使用。
- * 默认插槽提供「操作按钮」（如「去设置」「记一笔」），没有插槽时只显示文案。
+ * 用 emoji 作为插图（项目风格），标题/描述/操作按钮的插槽语义保持不变。
  */
 withDefaults(
   defineProps<{
-    /** 主标题 */
     title?: string
-    /** 补充说明 */
     description?: string
-    /** emoji 图标，直接渲染字符 */
     icon?: string
-    /** 紧凑模式：内嵌在卡片里时减小上下留白 */
     compact?: boolean
   }>(),
   {
@@ -26,36 +21,33 @@ withDefaults(
 </script>
 
 <template>
-  <div class="empty" :class="{ 'empty--compact': compact }">
-    <span class="empty__icon" aria-hidden="true">{{ icon }}</span>
-    <p class="empty__title">{{ title }}</p>
-    <p v-if="description" class="empty__desc">{{ description }}</p>
+  <el-empty class="empty" :class="{ 'empty--compact': compact }" :image-size="compact ? 52 : 74">
+    <template #image>
+      <span class="empty__icon" aria-hidden="true">{{ icon }}</span>
+    </template>
+    <template #description>
+      <p class="empty__title">{{ title }}</p>
+      <p v-if="description" class="empty__desc">{{ description }}</p>
+    </template>
     <div v-if="$slots.action" class="empty__action">
       <slot name="action" />
     </div>
-  </div>
+  </el-empty>
 </template>
 
 <style scoped>
 .empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 48px 20px;
-  text-align: center;
+  padding: 28px 16px;
 }
 
 .empty--compact {
-  padding: 26px 16px;
+  padding: 16px 12px;
 }
 
 .empty__icon {
-  font-size: 30px;
+  display: block;
+  font-size: 32px;
   line-height: 1;
-  margin-bottom: 4px;
-  opacity: 0.9;
 }
 
 .empty__title {
@@ -65,12 +57,16 @@ withDefaults(
 }
 
 .empty__desc {
+  margin-top: 4px;
   font-size: 12.5px;
   color: var(--ink-3);
-  max-width: 280px;
 }
 
 .empty__action {
-  margin-top: 10px;
+  margin-top: 12px;
+}
+
+.empty :deep(.el-empty__description) {
+  margin-top: 8px;
 }
 </style>

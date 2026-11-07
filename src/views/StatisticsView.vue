@@ -279,35 +279,38 @@ function onPresetChange(value: string): void {
         </div>
       </div>
 
-      <div class="table-wrap">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>月份</th>
-              <th class="ta-r">收入</th>
-              <th class="ta-r">支出</th>
-              <th class="ta-r">结余</th>
-              <th class="col-share">支出占比</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="row in rows" :key="row.month">
-              <td class="month">{{ monthLabel(row.month) }}</td>
-              <td class="ta-r num text-income">{{ formatCurrency(row.income) }}</td>
-              <td class="ta-r num text-expense">{{ formatCurrency(row.expense) }}</td>
-              <td class="ta-r num" :class="{ 'text-expense': row.balance < 0 }">
-                {{ formatCurrency(row.balance) }}
-              </td>
-              <td class="col-share">
-                <div class="share">
-                  <ProgressBar :value="row.share" :height="6" />
-                  <span class="share__value num">{{ formatPercent(row.share, 0) }}</span>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <el-table :data="rows" row-key="month" class="month-table" empty-text="区间内暂无数据">
+        <el-table-column label="月份" width="120">
+          <template #default="{ row }">
+            <span class="month">{{ monthLabel(row.month) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="收入" width="140" align="right">
+          <template #default="{ row }">
+            <span class="num text-income">{{ formatCurrency(row.income) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="支出" width="140" align="right">
+          <template #default="{ row }">
+            <span class="num text-expense">{{ formatCurrency(row.expense) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="结余" width="140" align="right">
+          <template #default="{ row }">
+            <span class="num" :class="{ 'text-expense': row.balance < 0 }">
+              {{ formatCurrency(row.balance) }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="支出占比" min-width="200">
+          <template #default="{ row }">
+            <div class="share">
+              <ProgressBar :value="row.share" :height="6" />
+              <span class="share__value num">{{ formatPercent(row.share, 0) }}</span>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
     </section>
   </div>
 </template>
@@ -350,45 +353,36 @@ function onPresetChange(value: string): void {
   gap: 16px;
 }
 
-.table-wrap {
+/* 月度明细表 */
+.month-table {
+  --el-table-border-color: transparent;
   width: 100%;
-  overflow-x: auto;
 }
 
-.table {
-  width: 100%;
-  min-width: 620px;
+.month-table :deep(.el-table__inner-wrapper::before) {
+  display: none;
 }
 
-.table th {
+.month-table :deep(th.el-table__cell) {
   padding: 0 12px 10px;
   font-size: 11.5px;
   font-weight: 600;
   color: var(--ink-3);
-  text-align: left;
   border-bottom: 1px solid var(--line);
 }
 
-.table td {
+.month-table :deep(td.el-table__cell) {
   padding: 11px 12px;
   font-size: 13.5px;
   border-bottom: 1px solid color-mix(in srgb, var(--line) 62%, transparent);
 }
 
-.table tbody tr:last-child td {
+.month-table :deep(.el-table__row:last-child td) {
   border-bottom: none;
-}
-
-.ta-r {
-  text-align: right;
 }
 
 .month {
   font-weight: 550;
-}
-
-.col-share {
-  width: 200px;
 }
 
 .share {

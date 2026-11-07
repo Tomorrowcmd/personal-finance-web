@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { Lock, SwitchButton } from '@element-plus/icons-vue'
 
 import { useAuthStore } from '@/stores/auth'
 import { useConfirmStore } from '@/stores/confirm'
@@ -10,72 +11,32 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import ChangePasswordModal from '@/components/auth/ChangePasswordModal.vue'
 
 /**
- * 顶栏用户菜单
+ * 顶栏用户菜单（Element Plus 版）
  *
- * 点击头像展开：修改密码 / 退出登录。
- * 交互细节：
- * - 点击菜单外部关闭（监听 document，注意用 .stop 避免刚点开就被关掉）
- * - Esc 关闭
- * - 退出登录保留二次确认，避免误点
- * - 修改密码用独立弹窗，不关闭当前页面
+ * el-dropdown 负责点击展开、点击外部关闭、键盘导航与定位；
+ * 菜单项：修改密码 / 退出登录（保留二次确认）。
  */
 const auth = useAuthStore()
 const confirm = useConfirmStore()
 const toast = useToastStore()
 const router = useRouter()
 
-/** 下拉菜单是否展开 */
-const open = ref(false)
-/** 修改密码弹窗是否打开 */
+/** 修改密码弹窗 */
 const passwordOpen = ref(false)
-/** 菜单根节点，用于判断点击是否发生在菜单内部 */
-const root = ref<HTMLElement | null>(null)
 
-/** 展开/收起 */
-function toggle(): void {
-  open.value = !open.value
+/** 下拉菜单命令分发 */
+function onCommand(command: string | number | object): void {
+  if (command === 'password') {
+    passwordOpen.value = true
+    return
+  }
+  if (command === 'logout') {
+    void handleLogout()
+  }
 }
 
-function close(): void {
-  open.value = false
-}
-
-/** 点击文档其它位置：关闭菜单（点在菜单内则忽略） */
-function onDocumentClick(event: MouseEvent): void {
-  if (!open.value) return
-  if (root.value && !root.value.contains(event.target as Node)) close()
-}
-
-/** Esc 关闭菜单 */
-function onKeydown(event: KeyboardEvent): void {
-  if (event.key === 'Escape' && open.value) close()
-}
-
-// 全局监听只在组件挂载期间生效，卸载时记得移除，避免内存泄漏
-onMounted(() => {
-  document.addEventListener('click', onDocumentClick)
-  document.addEventListener('keydown', onKeydown)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', onDocumentClick)
-  document.removeEventListener('keydown', onKeydown)
-})
-
-/** 打开修改密码弹窗，同时收起菜单 */
-function openPasswordModal(): void {
-  close()
-  passwordOpen.value = true
-}
-
-/**
- * 退出登录
- *
- * 先确认，再让 store 通知后端并清空本地会话；
- * 最后跳登录页（用 replace，避免用户按返回键又回到已登出的页面）。
- */
+/** 退出登录：确认 → 通知后端 → 清本地 → 回登录页 */
 async function handleLogout(): Promise<void> {
-  close()
   const confirmed = await confirm.ask({
     title: '退出登录',
     message: '确定要退出当前账号吗？退出后需要重新输入账号和密码。',
@@ -91,59 +52,37 @@ async function handleLogout(): Promise<void> {
 </script>
 
 <template>
-  <div ref="root" class="user-menu">
-    <button
-      class="trigger"
-      type="button"
-      :aria-expanded="open"
-      aria-haspopup="menu"
-      :title="`${auth.displayName} 的账号菜单`"
-      @click.stop="toggle"
-    >
+  <el-dropdown trigger="click" placement="bottom-end" @command="onCommand">
+    <button class="trigger" type="button" :title="`${auth.displayName} 的账号菜单`">
       <span class="trigger__avatar">{{ auth.initial }}</span>
       <span class="trigger__name">{{ auth.displayName }}</span>
       <AppIcon name="chevronDown" :size="13" class="trigger__caret" />
     </button>
 
-    <Transition name="menu">
-      <div v-if="open" class="menu" role="menu">
-        <div class="menu__head">
-          <p class="menu__name">{{ auth.displayName }}</p>
-          <p class="menu__account">@{{ auth.user?.username ?? 'unknown' }}</p>
-        </div>
+    <template #dropdown>
+      <el-dropdown-menu class="user-dropdown">
+        <el-dropdown-item disabled class="user-dropdown__head">
+          <div>
+            <p class="user-dropdown__name">{{ auth.displayName }}</p>
+            <p class="user-dropdown__account">@{{ auth.user?.username ?? 'unknown' }}</p>
+          </div>
+        </el-dropdown-item>
+        <el-dropdown-item command="password" :icon="Lock" divided>修改密码</el-dropdown-item>
+        <el-dropdown-item command="logout" :icon="SwitchButton">退出登录</el-dropdown-item>
+      </el-dropdown-menu>
+    </template>
+  </el-dropdown>
 
-        <button class="menu__item" type="button" role="menuitem" @click="openPasswordModal">
-          <AppIcon name="lock" :size="15" />
-          修改密码
-        </button>
-
-        <button
-          class="menu__item menu__item--danger"
-          type="button"
-          role="menuitem"
-          @click="handleLogout"
-        >
-          <AppIcon name="logout" :size="15" />
-          退出登录
-        </button>
-      </div>
-    </Transition>
-
-    <ChangePasswordModal v-model="passwordOpen" />
-  </div>
+  <ChangePasswordModal v-model="passwordOpen" />
 </template>
 
 <style scoped>
-.user-menu {
-  position: relative;
-}
-
 .trigger {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   height: 34px;
-  padding: 0 8px 0 3px;
+  padding: 0 9px 0 4px;
   border-radius: var(--radius-pill);
   background: var(--surface);
   border: 1px solid var(--line);
@@ -161,8 +100,8 @@ async function handleLogout(): Promise<void> {
 .trigger__avatar {
   display: grid;
   place-items: center;
-  width: 27px;
-  height: 27px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: var(--brand-soft);
   color: var(--brand-strong);
@@ -182,89 +121,11 @@ async function handleLogout(): Promise<void> {
 
 .trigger__caret {
   color: var(--ink-3);
-  flex: none;
-}
-
-/* 下拉面板 */
-.menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  z-index: 80;
-  min-width: 196px;
-  padding: 6px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-pop);
-}
-
-.menu__head {
-  padding: 6px 10px 9px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid var(--line);
-}
-
-.menu__name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.menu__account {
-  font-size: 11.5px;
-  color: var(--ink-3);
-  font-family: var(--font-num);
-  margin-top: 1px;
-}
-
-.menu__item {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  width: 100%;
-  height: 34px;
-  padding: 0 10px;
-  border-radius: 8px;
-  font-size: 13px;
-  color: var(--ink-2);
-  text-align: left;
-  transition:
-    background-color 0.14s var(--ease),
-    color 0.14s var(--ease);
-}
-
-.menu__item:hover {
-  background: var(--surface-sunken);
-  color: var(--ink);
-}
-
-.menu__item--danger {
-  color: var(--danger);
-}
-
-.menu__item--danger:hover {
-  background: var(--danger-soft);
-  color: var(--danger);
-}
-
-/* 动画 */
-.menu-enter-active,
-.menu-leave-active {
-  transition:
-    opacity 0.16s var(--ease),
-    transform 0.16s var(--ease-out);
-}
-
-.menu-enter-from,
-.menu-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
 }
 
 @media (max-width: 900px) {
   .trigger {
-    padding: 0 3px;
+    padding: 0 4px;
     background: transparent;
     border-color: transparent;
   }
@@ -273,10 +134,29 @@ async function handleLogout(): Promise<void> {
   .trigger__caret {
     display: none;
   }
+}
+</style>
 
-  .trigger__avatar {
-    width: 28px;
-    height: 28px;
-  }
+<style>
+/* 下拉菜单里的用户信息头（el-dropdown-menu 渲染在 body 下，需要非 scoped 样式） */
+.user-dropdown .user-dropdown__head {
+  height: auto;
+  padding: 6px 12px 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+  opacity: 1;
+  cursor: default;
+}
+
+.user-dropdown .user-dropdown__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.user-dropdown .user-dropdown__account {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin-top: 1px;
 }
 </style>

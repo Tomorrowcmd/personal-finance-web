@@ -1,26 +1,21 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { clamp } from '@/utils/format'
-
 /**
- * 进度条
+ * 进度条（Element Plus 封装）
  *
- * 用于预算使用率、分类占比等场景。
- * tone=auto 时按用量自动变色：<80% 品牌色，80~100% 橙色，≥100% 红色，
- * 这样不需要每个调用方自己判断超支。
- * 传入值可能超过 100（超支），内部会夹取到 0-100 只影响宽度，
- * 但颜色判断仍用原始值，所以超支时依然是红色。
+ * tone=auto 时按用量自动变色：<80% 品牌色，80~100% 橙色，≥100% 红色。
+ * 颜色判断用原始值，宽度由 EP 自动夹取到 0-100。
  */
 const props = withDefaults(
   defineProps<{
-    /** 百分比，0-100（允许超过 100 表示超支） */
+    /** 百分比，允许超过 100 表示超支 */
     value: number
-    /** 颜色策略：auto 按阈值，其余强制指定 */
+    /** 颜色策略 */
     tone?: 'auto' | 'brand' | 'warn' | 'danger'
-    /** 轨道高度（px） */
+    /** 轨道高度 */
     height?: number
-    /** 是否在右侧显示百分比数字 */
+    /** 是否显示右侧百分比 */
     showLabel?: boolean
   }>(),
   {
@@ -30,68 +25,56 @@ const props = withDefaults(
   },
 )
 
-/** 实际渲染的宽度百分比（夹取到 0-100） */
-const percent = computed(() => clamp(props.value, 0, 100))
-
-/** 最终颜色：auto 模式下按 80% / 100% 两个阈值切换 */
+/** auto 模式下的颜色 */
 const resolvedTone = computed(() => {
   if (props.tone !== 'auto') return props.tone
   if (props.value >= 100) return 'danger'
   if (props.value >= 80) return 'warn'
   return 'brand'
 })
+
+/** 把语义色转成实际色值（EP 支持传颜色字符串） */
+const color = computed(() => {
+  switch (resolvedTone.value) {
+    case 'warn':
+      return 'var(--warning)'
+    case 'danger':
+      return 'var(--danger)'
+    default:
+      return 'var(--brand)'
+  }
+})
 </script>
 
 <template>
-  <div class="progress-wrap">
-    <div class="progress" :style="{ height: `${height}px` }">
-      <div
-        class="progress__fill"
-        :class="`progress__fill--${resolvedTone}`"
-        :style="{ width: `${percent}%` }"
-      />
-    </div>
-    <span v-if="showLabel" class="progress__label num">{{ Math.round(value) }}%</span>
-  </div>
+  <el-progress
+    class="progress"
+    :percentage="Math.min(Math.max(value, 0), 100)"
+    :stroke-width="height"
+    :color="color"
+    :show-text="showLabel"
+    :status="value >= 100 ? 'exception' : undefined"
+  />
 </template>
 
 <style scoped>
-.progress-wrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.progress {
   width: 100%;
 }
 
-.progress {
-  flex: 1;
+.progress :deep(.el-progress-bar__outer) {
   background: var(--surface-sunken);
   border-radius: var(--radius-pill);
-  overflow: hidden;
 }
 
-.progress__fill {
-  height: 100%;
+.progress :deep(.el-progress-bar__inner) {
   border-radius: var(--radius-pill);
   transition: width 0.5s var(--ease-out);
 }
 
-.progress__fill--brand {
-  background: var(--brand);
-}
-
-.progress__fill--warn {
-  background: var(--warning);
-}
-
-.progress__fill--danger {
-  background: var(--danger);
-}
-
-.progress__label {
+.progress :deep(.el-progress__text) {
   font-size: 12px;
   color: var(--ink-3);
   min-width: 34px;
-  text-align: right;
 }
 </style>

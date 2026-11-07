@@ -1,17 +1,15 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 /**
- * 骨架占位块
+ * 骨架占位块（Element Plus 封装）
  *
- * 用于「数据还在路上」的场景：图表、卡片内容还没到时不渲染空状态，
- * 而是显示同尺寸的灰色占位，避免「空状态文案闪一下又变成图表」的跳动。
+ * 数据未返回时占位，避免空状态文案闪烁；尺寸与真实内容保持一致。
  */
-withDefaults(
+const props = withDefaults(
   defineProps<{
-    /** 高度：数字按 px 处理，字符串原样使用（如 '100%'） */
     height?: number | string
-    /** 宽度，默认撑满 */
     width?: string
-    /** 圆角 */
     radius?: string
   }>(),
   {
@@ -21,39 +19,32 @@ withDefaults(
   },
 )
 
-/** 数字转 px，字符串直接用 */
-function toSize(value: number | string): string {
-  return typeof value === 'number' ? `${value}px` : value
-}
+/** 数字转 px */
+const heightValue = computed(() =>
+  typeof props.height === 'number' ? `${props.height}px` : props.height,
+)
 </script>
 
 <template>
-  <div
-    class="skeleton-block"
-    :style="{ height: toSize(height), width, borderRadius: radius }"
-    aria-hidden="true"
-  />
+  <el-skeleton animated class="skeleton" :loading="true">
+    <template #template>
+      <el-skeleton-item
+        variant="rect"
+        :style="{ height: heightValue, width, borderRadius: radius }"
+      />
+    </template>
+    <template #default>
+      <span />
+    </template>
+  </el-skeleton>
 </template>
 
 <style scoped>
-.skeleton-block {
-  background: linear-gradient(
-    90deg,
-    var(--surface-sunken) 25%,
-    color-mix(in srgb, var(--surface-sunken) 55%, var(--line)) 37%,
-    var(--surface-sunken) 63%
-  );
-  background-size: 400% 100%;
-  animation: shimmer 1.3s ease infinite;
+.skeleton {
+  width: 100%;
 }
 
-/* 与 TransactionTable 的骨架屏保持同一节奏 */
-@keyframes shimmer {
-  0% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0 50%;
-  }
+.skeleton :deep(.el-skeleton__item) {
+  background: var(--surface-sunken);
 }
 </style>

@@ -1,28 +1,19 @@
 <script setup lang="ts">
-import { useId } from 'vue'
+import { computed, useId } from 'vue'
 
 /**
- * 多行文本域
+ * 多行文本域（Element Plus 封装）
  *
- * 用于备注这类短文本（≤50 字），高度可拖拽调整。
- * 与 BaseInput 保持同样的 label / hint / error 结构，
- * 表单里混排时视觉一致。
+ * 用于备注（≤50 字），保留 label / hint / error 的结构。
  */
-withDefaults(
+const props = withDefaults(
   defineProps<{
-    /** 文本值 */
     modelValue: string
-    /** 字段标题 */
     label?: string
-    /** 占位提示 */
     placeholder?: string
-    /** 初始行数（最小高度另有 CSS 控制） */
     rows?: number
-    /** 最大字符数 */
     maxlength?: number
-    /** 辅助说明（有 error 时不显示） */
     hint?: string
-    /** 错误文案 */
     error?: string
   }>(),
   {
@@ -34,28 +25,28 @@ withDefaults(
   },
 )
 
-/** 输入时回传字符串 */
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 
-// 关联 label 与 textarea
 const id = useId()
 
-function onInput(event: Event): void {
-  emit('update:modelValue', (event.target as HTMLTextAreaElement).value)
-}
+/** el-input type=textarea 只接受字符串 */
+const value = computed({
+  get: () => props.modelValue,
+  set: (next: string) => emit('update:modelValue', next),
+})
 </script>
 
 <template>
   <div class="field" :class="{ 'field--error': error }">
     <label v-if="label" class="field__label" :for="id">{{ label }}</label>
-    <textarea
+    <el-input
       :id="id"
-      class="field__textarea"
-      :value="modelValue"
-      :placeholder="placeholder"
+      v-model="value"
+      type="textarea"
       :rows="rows"
+      :placeholder="placeholder"
       :maxlength="maxlength"
-      @input="onInput"
+      resize="vertical"
     />
     <p v-if="error" class="field__error">{{ error }}</p>
     <p v-else-if="hint" class="field__hint">{{ hint }}</p>
@@ -75,37 +66,25 @@ function onInput(event: Event): void {
   color: var(--ink-2);
 }
 
-.field__textarea {
-  width: 100%;
-  padding: 10px 12px;
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-md);
-  outline: none;
-  resize: vertical;
+.field :deep(.el-textarea__inner) {
   min-height: 74px;
-  line-height: 1.6;
-  font-size: 14px;
-  transition:
-    border-color 0.16s var(--ease),
-    box-shadow 0.16s var(--ease);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 0 1px var(--line-strong) inset;
 }
 
-.field__textarea:hover {
-  border-color: var(--ink-3);
+.field :deep(.el-textarea__inner:hover) {
+  box-shadow: 0 0 0 1px var(--ink-3) inset;
 }
 
-.field__textarea:focus {
-  border-color: var(--brand);
-  box-shadow: 0 0 0 3px var(--brand-ring);
+.field :deep(.el-textarea__inner:focus) {
+  box-shadow:
+    0 0 0 1px var(--brand) inset,
+    0 0 0 3px var(--brand-ring);
 }
 
-.field--error .field__textarea {
-  border-color: var(--danger);
-}
-
-.field__textarea::placeholder {
-  color: var(--ink-3);
+.field--error :deep(.el-textarea__inner) {
+  box-shadow: 0 0 0 1px var(--danger) inset;
 }
 
 .field__hint,

@@ -1,36 +1,28 @@
 <script setup lang="ts">
-import { useId } from 'vue'
-
-import AppIcon from './AppIcon.vue'
+import { computed, useId } from 'vue'
 
 /**
- * 下拉选择
+ * 下拉选择（Element Plus 封装）
  *
- * 基于原生 <select>，保留键盘操作与移动端原生滚轮体验；
- * 只负责样式与「值类型保持」，不处理业务逻辑。
+ * 与原来一样：v-model 保留选项的原始类型（string / number），
+ * 调用方不需要做 String() / Number() 转换。
  */
 export interface SelectOption {
   /** 展示文案 */
   label: string
-  /** 选项值：字符串或数字，onChange 会原样回传该类型 */
+  /** 选项值 */
   value: string | number
-  /** 是否禁用该项 */
+  /** 是否禁用 */
   disabled?: boolean
 }
 
 const props = withDefaults(
   defineProps<{
-    /** 当前选中值 */
     modelValue: string | number
-    /** 选项列表 */
     options: SelectOption[]
-    /** 字段标题 */
     label?: string
-    /** 占位项文案；传空串则不渲染占位项 */
     placeholder?: string
-    /** 禁用 */
     disabled?: boolean
-    /** 尺寸：sm 32px / md 38px，用于和工具条里的其它控件对齐 */
     size?: 'sm' | 'md'
   }>(),
   {
@@ -43,44 +35,47 @@ const props = withDefaults(
 
 const emit = defineEmits<{ 'update:modelValue': [value: string | number] }>()
 
-// 关联 label 与 select
 const id = useId()
 
 /**
- * 原生 select 的 value 永远是字符串，
- * 这里按「字符串相等」找回原始选项，把 number 原样抛回去，
- * 避免调用方到处 Number() 转换。
+ * 占位文案
+ *
+ * Element Plus 在值为空（''）时会显示 placeholder。
+ * 业务里用「空值选项」表示「全部分类」，所以当没有显式 placeholder 时，
+ * 自动用该选项的文案兜底，避免出现空白的下拉框。
  */
-function onChange(event: Event): void {
-  const raw = (event.target as HTMLSelectElement).value
-  const matched = props.options.find((option) => String(option.value) === raw)
-  emit('update:modelValue', matched ? matched.value : raw)
-}
+const effectivePlaceholder = computed(() => {
+  if (props.placeholder) return props.placeholder
+  const emptyOption = props.options.find((option) => option.value === '')
+  return emptyOption?.label ?? '请选择'
+})
+
+/** el-select 直接支持 string | number，无需类型转换 */
+const value = computed({
+  get: () => props.modelValue,
+  set: (next: string | number) => emit('update:modelValue', next),
+})
 </script>
 
 <template>
   <div class="field">
     <label v-if="label" class="field__label" :for="id">{{ label }}</label>
-    <div class="field__control" :class="`field__control--${size}`">
-      <select
-        :id="id"
-        class="field__select"
-        :value="String(modelValue)"
-        :disabled="disabled"
-        @change="onChange"
-      >
-        <option v-if="placeholder" value="" disabled>{{ placeholder }}</option>
-        <option
-          v-for="option in options"
-          :key="option.value"
-          :value="String(option.value)"
-          :disabled="option.disabled"
-        >
-          {{ option.label }}
-        </option>
-      </select>
-      <AppIcon name="chevronDown" :size="14" class="field__chevron" />
-    </div>
+    <el-select
+      :id="id"
+      v-model="value"
+      class="field__select"
+      :placeholder="effectivePlaceholder"
+      :disabled="disabled"
+      :size="size === 'sm' ? 'small' : 'default'"
+    >
+      <el-option
+        v-for="option in options"
+        :key="String(option.value)"
+        :label="option.label"
+        :value="option.value"
+        :disabled="option.disabled"
+      />
+    </el-select>
   </div>
 </template>
 
@@ -98,57 +93,19 @@ function onChange(event: Event): void {
   color: var(--ink-2);
 }
 
-.field__control {
-  position: relative;
-  display: flex;
-  align-items: center;
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-md);
-  transition:
-    border-color 0.16s var(--ease),
-    box-shadow 0.16s var(--ease);
-}
-
-.field__control--md {
-  height: 38px;
-}
-
-.field__control--sm {
-  height: 32px;
-}
-
-.field__control:hover {
-  border-color: var(--ink-3);
-}
-
-.field__control:focus-within {
-  border-color: var(--brand);
-  box-shadow: 0 0 0 3px var(--brand-ring);
-}
-
 .field__select {
-  appearance: none;
   width: 100%;
-  height: 100%;
-  padding: 0 32px 0 12px;
-  border: none;
-  outline: none;
-  background: transparent;
-  font-size: 14px;
-  border-radius: inherit;
-  cursor: pointer;
 }
 
-.field__select:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
+.field__select :deep(.el-select__wrapper) {
+  min-height: 38px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 0 1px var(--line-strong) inset;
 }
 
-.field__chevron {
-  position: absolute;
-  right: 11px;
-  pointer-events: none;
-  color: var(--ink-3);
+.field__select :deep(.el-select__wrapper.is-focused) {
+  box-shadow:
+    0 0 0 1px var(--brand) inset,
+    0 0 0 3px var(--brand-ring);
 }
 </style>

@@ -166,24 +166,10 @@ async function submit(): Promise<void> {
 
       <div class="form__block">
         <p class="form__label">类型</p>
-        <div class="segmented">
-          <button
-            type="button"
-            class="segmented__item"
-            :class="{ 'is-active': type === 'EXPENSE' }"
-            @click="type = 'EXPENSE'"
-          >
-            支出
-          </button>
-          <button
-            type="button"
-            class="segmented__item"
-            :class="{ 'is-active': type === 'INCOME' }"
-            @click="type = 'INCOME'"
-          >
-            收入
-          </button>
-        </div>
+        <el-radio-group v-model="type" size="default">
+          <el-radio-button value="EXPENSE">支出</el-radio-button>
+          <el-radio-button value="INCOME">收入</el-radio-button>
+        </el-radio-group>
       </div>
 
       <div class="form__block">

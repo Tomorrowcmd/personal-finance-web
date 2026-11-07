@@ -181,21 +181,22 @@ async function remove(category: Category): Promise<void> {
 .cat-card {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 15px 16px;
+  gap: 10px;
+  padding: 14px 16px 12px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   text-align: left;
   transition:
-    border-color 0.16s var(--ease),
-    box-shadow 0.16s var(--ease),
-    transform 0.16s var(--ease);
+    border-color 0.18s var(--ease),
+    box-shadow 0.18s var(--ease),
+    transform 0.18s var(--ease);
 }
 
 .cat-card:hover {
-  border-color: var(--line-strong);
+  border-color: color-mix(in srgb, var(--brand) 22%, var(--line));
   box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
 .cat-card--skeleton {
@@ -259,7 +260,8 @@ async function remove(category: Category): Promise<void> {
 .cat-card__actions {
   display: flex;
   gap: 4px;
-  padding-top: 2px;
+  margin-top: 2px;
+  padding-top: 8px;
   border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
 }
 
@@ -270,7 +272,6 @@ async function remove(category: Category): Promise<void> {
   height: 28px;
   border-radius: 8px;
   color: var(--ink-3);
-  margin-top: 8px;
 }
 
 .icon-btn:hover {

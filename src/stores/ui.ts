@@ -6,6 +6,8 @@ export type ThemeMode = 'light' | 'dark'
 
 /** localStorage 里保存主题偏好的 key */
 const THEME_KEY = 'pf.theme'
+/** localStorage 里保存侧边栏展开状态的 key */
+const SIDEBAR_KEY = 'pf.sidebar'
 
 /**
  * 读取初始主题
@@ -17,6 +19,11 @@ function readInitialTheme(): ThemeMode {
   const stored = localStorage.getItem(THEME_KEY)
   if (stored === 'light' || stored === 'dark') return stored
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+/** 读取侧边栏初始状态：默认展开 */
+function readInitialSidebar(): boolean {
+  return localStorage.getItem(SIDEBAR_KEY) === 'collapsed'
 }
 
 /**
@@ -33,6 +40,13 @@ export const useUiStore = defineStore('ui', () => {
   const quickAddOpen = ref(false)
   /** 移动端导航抽屉开关 */
   const mobileNavOpen = ref(false)
+  /** 侧边栏是否收起（桌面端） */
+  const sidebarCollapsed = ref(readInitialSidebar())
+
+  // 侧边栏状态持久化：刷新、重新登录后保持用户的选择
+  watch(sidebarCollapsed, (value) => {
+    localStorage.setItem(SIDEBAR_KEY, value ? 'collapsed' : 'expanded')
+  })
 
   // 主题变化时同步三处：DOM 属性、本地存储、浏览器地址栏颜色
   // immediate: true 保证首屏渲染前就把 data-theme 应用上，避免闪白
@@ -58,5 +72,18 @@ export const useUiStore = defineStore('ui', () => {
     quickAddOpen.value = true
   }
 
-  return { theme, quickAddOpen, mobileNavOpen, toggleTheme, openQuickAdd }
+  /** 展开 / 收起侧边栏 */
+  function toggleSidebar(): void {
+    sidebarCollapsed.value = !sidebarCollapsed.value
+  }
+
+  return {
+    theme,
+    quickAddOpen,
+    mobileNavOpen,
+    sidebarCollapsed,
+    toggleTheme,
+    openQuickAdd,
+    toggleSidebar,
+  }
 })
